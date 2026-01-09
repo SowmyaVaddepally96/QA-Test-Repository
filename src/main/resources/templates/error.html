@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('BabyShop • Error')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: nav}"></header>
+
+<main class="container">
+    <div class="card" style="margin-top:14px;">
+        <div class="card-body">
+            <div class="pill">Oops</div>
+            <div class="h1" style="margin-top:10px;">Something went wrong</div>
+            <div class="error" th:text="${message}">Error details</div>
+            <a class="btn btn-primary" th:href="@{/products}">Back to products</a>
+        </div>
+    </div>
+</main>
+</body>
+</html>
+

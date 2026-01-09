@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('BabyShop • Checkout')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: nav}"></header>
+
+<main class="container">
+    <div class="row">
+        <div>
+            <div class="h1" data-cy="checkout-title">Checkout</div>
+            <div class="muted">Enter shipping details to place your order.</div>
+        </div>
+        <a class="btn" th:href="@{/cart}" data-cy="back-to-cart">Back to cart</a>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+        <div class="card-body">
+            <div class="row" style="align-items:flex-start;">
+                <div style="flex: 1; min-width: 300px;">
+                    <form th:action="@{/checkout}" method="post" th:object="${checkoutForm}" data-cy="checkout-form">
+                        <div style="display:grid; gap:10px;">
+                            <div>
+                                <div class="muted">Full name</div>
+                                <input class="input" th:field="*{fullName}" placeholder="Alex Parent" data-cy="fullName"/>
+                                <div th:if="${#fields.hasErrors('fullName')}" class="error" th:errors="*{fullName}">Err</div>
+                            </div>
+                            <div>
+                                <div class="muted">Email</div>
+                                <input class="input" th:field="*{email}" placeholder="alex@example.com" data-cy="email"/>
+                                <div th:if="${#fields.hasErrors('email')}" class="error" th:errors="*{email}">Err</div>
+                            </div>
+                            <div>
+                                <div class="muted">Address</div>
+                                <input class="input" th:field="*{address}" placeholder="123 Baby St, Apt 4" data-cy="address"/>
+                                <div th:if="${#fields.hasErrors('address')}" class="error" th:errors="*{address}">Err</div>
+                            </div>
+                            <div class="row" style="justify-content:flex-start;">
+                                <div style="flex:1; min-width: 180px;">
+                                    <div class="muted">City</div>
+                                    <input class="input" th:field="*{city}" placeholder="San Jose" data-cy="city"/>
+                                    <div th:if="${#fields.hasErrors('city')}" class="error" th:errors="*{city}">Err</div>
+                                </div>
+                                <div style="width: 160px;">
+                                    <div class="muted">Postal code</div>
+                                    <input class="input" th:field="*{postalCode}" placeholder="95112" data-cy="postalCode"/>
+                                    <div th:if="${#fields.hasErrors('postalCode')}" class="error" th:errors="*{postalCode}">Err</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row" style="margin-top:14px; justify-content:flex-start;">
+                            <button class="btn btn-primary" type="submit" data-cy="place-order">Place order</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div style="width: 360px; min-width: 280px;">
+                    <div class="pill">Order summary</div>
+                    <div style="height:8px;"></div>
+                    <div th:each="item : ${cart.items}" class="row" style="margin-bottom:8px;" data-cy="summary-item">
+                        <div>
+                            <div style="font-weight:700;" th:text="${item.product.name}">Name</div>
+                            <div class="muted" th:text="${'Qty ' + item.quantity}">Qty</div>
+                        </div>
+                        <div class="price" th:text="${'$' + item.lineTotal}">$0.00</div>
+                    </div>
+                    <div class="row" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
+                        <div class="muted">Total</div>
+                        <div class="price" th:text="${'$' + cart.subtotal}" data-cy="checkout-total">$0.00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>
+

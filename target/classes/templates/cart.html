@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('BabyShop • Cart')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: nav}"></header>
+
+<main class="container">
+    <div class="row">
+        <div>
+            <div class="h1" data-cy="cart-title">Your cart</div>
+            <div class="muted">Review items and proceed to checkout.</div>
+        </div>
+        <a class="btn" th:href="@{/products}" data-cy="continue-shopping">Continue shopping</a>
+    </div>
+
+    <div th:if="${toast}" class="toast" th:text="${toast}" data-cy="toast"></div>
+
+    <div th:if="${#lists.isEmpty(cart.items)}" class="error" data-cy="empty-cart">
+        Your cart is empty. Add a few baby essentials first.
+    </div>
+
+    <div th:if="${!#lists.isEmpty(cart.items)}" class="card" style="margin-top:14px;" data-cy="cart-table">
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Product</th>
+                    <th style="width:140px;">Qty</th>
+                    <th style="width:160px;">Line total</th>
+                    <th style="width:120px;">Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${cart.items}" data-cy="cart-row">
+                    <td>
+                        <div style="font-weight:700;" th:text="${item.product.name}" data-cy="cart-item-name">Name</div>
+                        <div class="muted" th:text="${'$' + item.product.price}">Price</div>
+                    </td>
+                    <td>
+                        <form th:action="@{/cart/update}" method="post" class="row" style="justify-content:flex-start;">
+                            <input type="hidden" name="productId" th:value="${item.product.id}"/>
+                            <input class="input" type="number" name="quantity" min="0" max="99"
+                                   th:value="${item.quantity}" style="width:90px;" data-cy="cart-qty-input"/>
+                            <button class="btn" type="submit" data-cy="update-qty">Update</button>
+                        </form>
+                    </td>
+                    <td class="price" th:text="${'$' + item.lineTotal}" data-cy="cart-line-total">$0.00</td>
+                    <td>
+                        <form th:action="@{/cart/remove}" method="post">
+                            <input type="hidden" name="productId" th:value="${item.product.id}"/>
+                            <button class="btn btn-danger" type="submit" data-cy="remove-item">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div class="row" style="margin-top:12px;">
+                <div class="price" data-cy="cart-subtotal">Subtotal: <span th:text="${'$' + cart.subtotal}">$0.00</span></div>
+                <div class="row" style="justify-content:flex-end;">
+                    <form th:action="@{/cart/clear}" method="post">
+                        <button class="btn btn-danger" type="submit" data-cy="clear-cart">Clear cart</button>
+                    </form>
+                    <a class="btn btn-primary" th:href="@{/checkout}" data-cy="go-to-checkout">Checkout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>
+

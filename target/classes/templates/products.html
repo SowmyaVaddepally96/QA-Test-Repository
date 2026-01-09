@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('BabyShop • Products')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: nav}"></header>
+
+<main class="container">
+    <div class="row">
+        <div>
+            <div class="h1" data-cy="page-title">Baby essentials</div>
+            <div class="muted">Browse, search, and add to cart.</div>
+        </div>
+        <a class="btn" th:href="@{/cart}" data-cy="go-to-cart">View cart</a>
+    </div>
+
+    <div th:if="${#lists.isEmpty(products)}" class="error" data-cy="empty-results">
+        No products found. Try a different search.
+    </div>
+
+    <div th:if="${toast}" class="toast" th:text="${toast}" data-cy="toast"></div>
+
+    <div class="grid" data-cy="product-grid">
+        <div class="card" th:each="p : ${products}" data-cy="product-card">
+            <a th:href="@{|/products/${p.id}|}" data-cy="product-link">
+                <img class="card-img" th:src="${p.imageUrl}" th:alt="${p.name}"/>
+            </a>
+            <div class="card-body">
+                <div class="pill" th:text="${p.category}">CATEGORY</div>
+                <div class="h2" th:text="${p.name}" data-cy="product-name">Name</div>
+                <div class="muted" th:text="${#strings.abbreviate(p.description, 120)}">Description</div>
+                <div class="row">
+                    <div class="price" th:text="${'$' + p.price}" data-cy="product-price">$0.00</div>
+                    <form th:action="@{/cart/add}" method="post">
+                        <input type="hidden" name="productId" th:value="${p.id}"/>
+                        <input type="hidden" name="quantity" value="1"/>
+                        <button class="btn btn-primary" type="submit" data-cy="add-to-cart">Add</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>
+

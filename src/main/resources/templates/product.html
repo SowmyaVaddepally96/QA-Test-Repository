@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('BabyShop • Product')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: nav}"></header>
+
+<main class="container">
+    <a class="btn" th:href="@{/products}" data-cy="back-to-products">← Back</a>
+
+    <div class="card" style="margin-top:14px;">
+        <img class="card-img" style="height:320px;" th:src="${product.imageUrl}" th:alt="${product.name}" data-cy="product-image"/>
+        <div class="card-body">
+            <div class="pill" th:text="${product.category}">CATEGORY</div>
+            <div class="h1" th:text="${product.name}" data-cy="product-title">Product</div>
+            <div class="muted" th:text="${product.description}" data-cy="product-description">Description</div>
+            <div class="row">
+                <div class="price" th:text="${'$' + product.price}" data-cy="product-detail-price">$0.00</div>
+                <div class="muted" th:text="${product.inStock ? 'In stock' : 'Out of stock'}" data-cy="stock-label">In stock</div>
+            </div>
+
+            <form th:action="@{/cart/add}" method="post" class="row" style="justify-content:flex-start;">
+                <input type="hidden" name="productId" th:value="${product.id}"/>
+                <label class="muted" for="qty">Qty</label>
+                <input id="qty" class="input" type="number" name="quantity" min="1" max="99" value="1" style="width:90px;" data-cy="qty-input"/>
+                <button class="btn btn-primary" type="submit" th:disabled="${!product.inStock}" data-cy="add-to-cart-detail">
+                    Add to cart
+                </button>
+                <a class="btn" th:href="@{/cart}" data-cy="view-cart">View cart</a>
+            </form>
+        </div>
+    </div>
+</main>
+</body>
+</html>
+

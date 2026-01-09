@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${title}">BabyShop</title>
+    <link rel="stylesheet" th:href="@{/app.css}"/>
+</head>
+<body>
+<header class="nav" th:fragment="nav">
+    <div class="nav-inner">
+        <a class="brand" th:href="@{/products}" data-cy="nav-home">
+            <span class="logo" aria-hidden="true"></span>
+            <span>BabyShop</span>
+        </a>
+
+        <form th:action="@{/products}" method="get" class="nav-actions" data-cy="search-form">
+            <input class="input" type="search" name="q" placeholder="Search diapers, bottles, toys..."
+                   th:value="${q}" data-cy="search-input"/>
+            <button class="btn btn-primary" type="submit" data-cy="search-submit">Search</button>
+        </form>
+
+        <div class="nav-actions" style="gap:10px;">
+            <a class="btn" th:href="@{/cart}" data-cy="nav-cart">
+                Cart
+                <span class="badge" th:text="${cartItemCount}" data-cy="cart-count">0</span>
+            </a>
+
+            <a class="btn" th:if="${!isLoggedIn}" th:href="@{/auth(mode='login')}" data-cy="nav-login">Login</a>
+            <a class="btn btn-primary" th:if="${!isLoggedIn}" th:href="@{/auth(mode='signup')}" data-cy="nav-signup">Sign Up</a>
+
+            <div th:if="${isLoggedIn}" class="row" style="gap:10px; justify-content:flex-end;">
+                <span class="badge" th:text="${currentUserEmail}" data-cy="nav-user">user</span>
+                <form th:action="@{/logout}" method="post" style="margin:0;">
+                    <button class="btn btn-danger" type="submit" data-cy="nav-logout">Logout</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="container" th:fragment="content(content)">
+    <div th:replace="${content}"></div>
+    <div class="footer">Demo app: baby products shopping flow (browse, search, cart, checkout).</div>
+</main>
+</body>
+</html>
+

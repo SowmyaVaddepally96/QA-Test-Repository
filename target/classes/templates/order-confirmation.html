@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('BabyShop • Order placed')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: nav}"></header>
+
+<main class="container">
+    <div class="card" style="margin-top:14px;" data-cy="confirmation-card">
+        <div class="card-body">
+            <div class="pill">Success</div>
+            <div class="h1" style="margin-top:10px;" data-cy="confirmation-title">Order placed</div>
+            <div class="muted">Thanks for shopping baby essentials with us.</div>
+
+            <div class="toast" style="margin-top:14px;">
+                Your order number is <strong data-cy="order-id" th:text="${orderId}">0</strong>.
+            </div>
+
+            <div class="row" style="justify-content:flex-start;">
+                <a class="btn btn-primary" th:href="@{/products}" data-cy="back-to-products">Back to products</a>
+                <a class="btn" th:href="@{/cart}" data-cy="back-to-cart">Cart</a>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>
+

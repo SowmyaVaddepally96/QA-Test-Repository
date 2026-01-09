@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('BabyShop • Login / Sign Up')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: nav}"></header>
+
+<main class="container">
+    <div class="row">
+        <div>
+            <div class="h1" data-cy="auth-title">Welcome</div>
+            <div class="muted">Login or create an account.</div>
+        </div>
+        <a class="btn" th:href="@{/products}" data-cy="auth-back">Back to shop</a>
+    </div>
+
+    <div class="row" style="justify-content:flex-start; margin-top:14px;" data-cy="auth-options">
+        <a class="btn" th:classappend="${mode=='login'} ? ' btn-primary' : ''" th:href="@{/auth(mode='login')}" data-cy="auth-login-option">Login</a>
+        <a class="btn" th:classappend="${mode=='signup'} ? ' btn-primary' : ''" th:href="@{/auth(mode='signup')}" data-cy="auth-signup-option">Sign Up</a>
+    </div>
+
+    <div th:if="${authError}" class="error" th:text="${authError}" data-cy="auth-error"></div>
+
+    <!-- Login form -->
+    <div th:if="${mode=='login'}" class="card" style="margin-top:14px;" data-cy="login-form">
+        <div class="card-body">
+            <form th:action="@{/auth/login}" method="post" th:object="${loginForm}">
+                <div style="display:grid; gap:10px;">
+                    <div>
+                        <div class="muted">Username/Email</div>
+                        <input class="input" th:field="*{email}" placeholder="you@example.com" data-cy="login-email"/>
+                        <div th:if="${#fields.hasErrors('email')}" class="error" th:errors="*{email}" data-cy="login-email-error">Err</div>
+                    </div>
+                    <div>
+                        <div class="muted">Password</div>
+                        <input class="input" type="password" th:field="*{password}" placeholder="••••••••" data-cy="login-password"/>
+                        <div th:if="${#fields.hasErrors('password')}" class="error" th:errors="*{password}" data-cy="login-password-error">Err</div>
+                    </div>
+                </div>
+                <div class="row" style="margin-top:14px; justify-content:flex-start;">
+                    <button class="btn btn-primary" type="submit" data-cy="login-submit">Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Signup form -->
+    <div th:if="${mode=='signup'}" class="card" style="margin-top:14px;" data-cy="signup-form">
+        <div class="card-body">
+            <form th:action="@{/auth/signup}" method="post" th:object="${signupForm}">
+                <div style="display:grid; gap:10px;">
+                    <div>
+                        <div class="muted">Username/Email</div>
+                        <input class="input" th:field="*{email}" placeholder="you@example.com" data-cy="signup-email"/>
+                        <div th:if="${#fields.hasErrors('email')}" class="error" th:errors="*{email}" data-cy="signup-email-error">Err</div>
+                    </div>
+                    <div>
+                        <div class="muted">Password</div>
+                        <input class="input" type="password" th:field="*{password}" placeholder="Min 6 characters" data-cy="signup-password"/>
+                        <div th:if="${#fields.hasErrors('password')}" class="error" th:errors="*{password}" data-cy="signup-password-error">Err</div>
+                    </div>
+                    <div>
+                        <div class="muted">Confirm Password</div>
+                        <input class="input" type="password" th:field="*{confirmPassword}" placeholder="Repeat password" data-cy="signup-confirm"/>
+                        <div th:if="${#fields.hasErrors('confirmPassword')}" class="error" th:errors="*{confirmPassword}" data-cy="signup-confirm-error">Err</div>
+                    </div>
+                </div>
+                <div class="row" style="margin-top:14px; justify-content:flex-start;">
+                    <button class="btn btn-primary" type="submit" data-cy="signup-submit">Sign Up</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+</body>
+</html>
+

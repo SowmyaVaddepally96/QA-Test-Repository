@@ -1,0 +1,14 @@
+{
+  "name": "baby-shop-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Cypress end-to-end tests for the BabyShop Spring Boot app",
+  "devDependencies": {
+    "cypress": "^13.15.0"
+  },
+  "scripts": {
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run"
+  }
+}
+
