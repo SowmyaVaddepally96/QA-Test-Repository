@@ -1,0 +1,49 @@
+alwaysApply: false
+---
+
+# Scope
+Apply when asked to generate, update, or run Playwright tests inside the repository.
+
+# Behavior
+
+## Repository Rules
+- All automation MUST live inside the /playwright folder.
+- Never create tests outside this directory.
+- Follow the required folder structure exactly.
+
+## Test Reliability
+- Never use hard waits or sleep statements.
+- Prefer data-testid selectors.
+- Use Playwright auto-waiting and assertions.
+- Tests must be independent and parallel-safe.
+
+## Development Workflow
+- Explore the codebase to find selectors.
+- Prefer source code selectors over guessing.
+- Run the app locally if needed.
+- Execute tests and fix failures before finalizing output.
+
+## Selector Priority
+1. data-testid
+2. getByRole
+3. getByLabel
+4. getByText
+5. CSS (last resort)
+6. XPath (avoid)
+
+## Code Quality
+- Use TypeScript and Playwright Test Runner.
+- Follow Page Object Model when appropriate.
+- Reuse fixtures for common flows (login, setup).
+- Ensure tests are CI-friendly.
+
+# Output Order
+Provide results in this order:
+
+1. Summary
+2. Playwright Folder Structure
+3. Files Created / Updated
+4. Selector Sources
+5. Playwright Tests
+6. How to Run
+7. Notes / Assumptions

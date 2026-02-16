@@ -1,0 +1,49 @@
+alwaysApply: false
+---
+
+# Scope
+Apply when asked to clean, deduplicate, standardize, or prepare manual
+test cases for automation.
+
+# Behavior
+
+## Test Quality
+- Ensure every test is atomic (one primary user intent).
+- Remove ambiguity and vague language.
+- Replace human phrasing with deterministic outcomes.
+- Ensure every test has explicit Preconditions, Steps, and Expected Results.
+- Remove or flag non-automatable steps.
+
+## Automation Readiness
+- Add automation metadata for every test:
+  - Feature Area
+  - Route / URL
+  - Setup Strategy (UI / API+UI / API)
+  - Reusable Flow (Yes/No)
+  - Suggested Page Objects
+  - Tags and Priority
+
+## Deduplication
+- Merge overlapping tests.
+- Split large multi-flow tests into atomic scenarios.
+
+## Enrichment
+- Identify reusable flows and suggest fixtures.
+- Suggest smoke vs regression grouping.
+- Provide repo navigation hints for the automation agent.
+
+## Risk Awareness
+- Flag missing selectors, CAPTCHA, 2FA, email verification, and third-party dependencies as automation blockers.
+
+# Output Order
+Provide results in this order:
+
+1. Summary
+2. Deduplicated Tests
+3. Normalized Test Cases
+4. Reusable Flows Identified
+5. Suggested Test Suites
+6. Repo Navigation Hints
+7. Automation Gaps / Blockers
+8. Assumptions
+9. Ready for Automation Score
