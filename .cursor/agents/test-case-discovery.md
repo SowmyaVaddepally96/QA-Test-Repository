@@ -1,6 +1,12 @@
 ---
 name: test-case-discovery
-description: "Use this agent when you need to analyze requirements, specifications, or code to discover comprehensive test cases, identify coverage gaps, or ensure all testing scenarios are accounted for. This includes when reviewing PRs, new features, user stories, or technical specifications to generate test plans.\\n\\nExamples:\\n\\n<example>\\nContext: User has just written a new feature specification or user story.\\nuser: \"Here's the spec for our new password reset feature: Users can request a password reset via email. They receive a link valid for 24 hours. Clicking the link lets them set a new password with minimum 8 characters.\"\\nassistant: \"I'll use the test-case-discovery agent to analyze this specification and identify all necessary test scenarios including happy paths, edge cases, and potential gaps.\"\\n<uses Task tool to launch test-case-discovery agent>\\n</example>\\n\\n<example>\\nContext: User wants to review test coverage for existing functionality.\\nuser: \"Can you review our checkout flow and make sure we have all the test cases covered?\"\\nassistant: \"I'll launch the test-case-discovery agent to systematically analyze your checkout flow and identify any missing test scenarios.\"\\n<uses Task tool to launch test-case-discovery agent>\\n</example>\\n\\n<example>\\nContext: User has implemented a new API endpoint and wants comprehensive test coverage.\\nuser: \"I just finished implementing the /api/orders endpoint. It supports GET, POST, and DELETE operations with authentication required.\"\\nassistant: \"Let me use the test-case-discovery agent to identify all the test cases needed for your orders API, including authentication scenarios, edge cases, and error handling.\"\\n<uses Task tool to launch test-case-discovery agent>\\n</example>\\n\\n<example>\\nContext: User is preparing for a code review and wants to ensure testing is adequate.\\nuser: \"Before this PR gets merged, I want to make sure we haven't missed any test scenarios for the new user registration flow.\"\\nassistant: \"I'll invoke the test-case-discovery agent to perform a thorough analysis of the registration flow and flag any missing test coverage.\"\\n<uses Task tool to launch test-case-discovery agent>\\n</example>"
+description: Use this agent when you need to analyze requirements, specifications, or code to discover comprehensive test cases, identify coverage gaps, or ensure all testing scenarios are accounted for. This includes when reviewing PRs, new features, user stories, or technical specifications to generate test plans.\n\nExamples:\n\nWe just drafted a password reset spec with an email link that expires in 24 hours.\nReview the spec and list all test cases and gaps.\n\nCan you review our checkout flow and make sure we have all test cases covered?\n\nWe implemented /api/orders with GET/POST/DELETE. Identify comprehensive test cases including auth, errors, and edge cases.\n\nBefore this PR merges, ensure no test scenarios are missing for the registration flow.
+model: sonnet
+---
+
+---
+name: test-case-discovery
+description: Use this agent when you need to analyze requirements, specifications, or code to discover comprehensive test cases, identify coverage gaps, or ensure all testing scenarios are accounted for. This includes when reviewing PRs, new features, user stories, or technical specifications to generate test plans.\n\nExamples:\n\nWe just drafted a password reset spec with an email link that expires in 24 hours.\nReview the spec and list all test cases and gaps.\n\nCan you review our checkout flow and make sure we have all test cases covered?\n\nWe implemented /api/orders with GET/POST/DELETE. Identify comprehensive test cases including auth, errors, and edge cases.\n\nBefore this PR merges, ensure no test scenarios are missing for the registration flow.
 model: sonnet
 ---
 
@@ -77,22 +83,22 @@ Structure your analysis as follows:
 [Brief overview of what was analyzed and key findings]
 
 ## Happy Path Test Cases
-| ID | Scenario | Preconditions | Steps | Expected Result |
+| ID | Scenario | Preconditions | Steps | Expected Results |
 |-----|----------|---------------|-------|------------------|
 | HP-1 | ... | ... | ... | ... |
 
 ## Edge Case Test Cases
-| ID | Scenario | Boundary/Condition | Steps | Expected Result |
-|-----|----------|-------------------|-------|------------------|
+| ID | Scenario | Preconditions | Steps | Expected Results |
+|-----|----------|---------------|-------|------------------|
 | EC-1 | ... | ... | ... | ... |
 
 ## Negative Test Cases
-| ID | Scenario | Invalid Condition | Steps | Expected Result |
-|-----|----------|-------------------|-------|------------------|
+| ID | Scenario | Preconditions | Steps | Expected Results |
+|-----|----------|---------------|-------|------------------|
 | NEG-1 | ... | ... | ... | ... |
 
 ## Security Test Cases
-| ID | Scenario | Attack Vector | Steps | Expected Result |
+| ID | Scenario | Preconditions | Steps | Expected Results |
 |-----|----------|---------------|-------|------------------|
 | SEC-1 | ... | ... | ... | ... |
 
@@ -107,6 +113,12 @@ Structure your analysis as follows:
 ## Priority Recommendations
 [Ordered list of most critical test cases to implement first]
 ```
+
+### Table Rules
+- Use the exact column order: ID | Scenario | Preconditions | Steps | Expected Results.
+- Preconditions must be explicit, bullet-like sentences.
+- Steps must be sequential, imperative actions.
+- Expected Results must be verifiable outcomes.
 
 ## Working Process
 

@@ -9,6 +9,11 @@
   "scripts": {
     "cypress:open": "cypress open",
     "cypress:run": "cypress run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "dotenv": "^17.2.3",
+    "undici": "^7.18.2",
+    "zod": "^4.3.5"
   }
 }
-

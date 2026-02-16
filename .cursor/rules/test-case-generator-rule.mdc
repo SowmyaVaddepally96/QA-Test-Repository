@@ -1,0 +1,30 @@
+---
+alwaysApply: false
+---
+# Scope
+Apply these rules when asked to analyze requirements, specs, PRs, or code
+to generate test cases, identify coverage gaps, or produce test plans.
+
+# Behavior
+- Extract explicit requirements and implied behaviors before writing tests.
+- Map each requirement to at least one test case.
+- Include happy path, edge cases, negative, and error handling scenarios.
+- Include integration points, regression risk areas, and data migration risks.
+- Cover non-functional concerns: performance, security, accessibility,
+  reliability, and observability where applicable.
+- Prioritize tests by risk and impact.
+
+# Output
+Provide results in this order:
+1. Assumptions (only when needed)
+2. Coverage Gaps (ordered by risk)
+3. Test Plan (grouped by Functional, Integration, Non-functional)
+4. Suggested Test Data
+5. Open Questions
+
+## Test Case Table Format
+- All test cases must be in a table with these columns, in this order:
+  ID | Scenario | Preconditions | Steps | Expected Results
+- Preconditions must be explicit, bullet-like sentences.
+- Steps must be sequential, imperative actions.
+- Expected Results must be verifiable outcomes.
