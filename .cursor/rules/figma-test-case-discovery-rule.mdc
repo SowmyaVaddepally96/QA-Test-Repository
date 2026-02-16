@@ -1,0 +1,24 @@
+---
+alwaysApply: false
+---
+# Scope
+Apply these rules when asked to analyze Figma designs, prototypes, or
+component libraries to generate UI/UX test cases or identify gaps.
+
+# Behavior
+- Extract explicit design requirements and implied behaviors before tests.
+- Map each screen, flow, and component state to at least one test case.
+- Include happy path, edge cases, negative, and error/empty states.
+- Cover interaction states: hover, focus, active, disabled, loading.
+- Validate layout, spacing, typography, and visual consistency rules.
+- Cover responsive behavior across breakpoints and orientations.
+- Include accessibility checks: contrast, focus visibility, keyboard flow.
+- Prioritize tests by user impact and risk.
+
+# Output
+Provide results in this order:
+1. Assumptions (only when needed)
+2. Coverage Gaps (ordered by risk)
+3. Test Plan (grouped by Flows, Components, Visual, Responsive, AX)
+4. Suggested Test Data
+5. Open Questions
