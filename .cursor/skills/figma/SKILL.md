@@ -118,3 +118,7 @@ Design comments often contain behavioral specifications, edge cases, and accepta
 ## Reference
 
 For detailed Figma API endpoints, node types, and data model documentation, see `reference.md` in this skill directory.
+
+## Example command to open figma
+
+export $(cat skills/figma/.env | xargs) && python3 skills/figma/scripts/figma_fetch.py structure --file-key "https://www.figma.com/design/yFFgIDlTbDcQAbICJyFEuu/Sophi---Developers-Hand-Off?node-id=1-2&p=f&t=ujjf42PLIkJbEGU6-0" --password 'CAB2024!'

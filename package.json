@@ -4,11 +4,14 @@
   "version": "1.0.0",
   "description": "Cypress end-to-end tests for the BabyShop Spring Boot app",
   "devDependencies": {
+    "@playwright/test": "^1.49.0",
     "cypress": "^13.15.0"
   },
   "scripts": {
     "cypress:open": "cypress open",
-    "cypress:run": "cypress run"
+    "cypress:run": "cypress run",
+    "playwright:install": "npx playwright install",
+    "test:playwright": "playwright test playwright/tests"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.3",
