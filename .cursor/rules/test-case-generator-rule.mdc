@@ -1,4 +1,5 @@
 ---
+description: "Apply when the user asks to generate test cases, analyze requirements/specs/PRs for test coverage, create test plans, identify coverage gaps, or produce test scenarios from documentation or code."
 alwaysApply: false
 ---
 # Scope

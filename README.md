@@ -1,4 +1,4 @@
-# BabyShop (Java) + Cypress (JavaScript)
+p# BabyShop (Java) + Cypress (JavaScript)
 
 Simple web application for shopping baby products: **browse**, **search**, **add to cart**, and **checkout**.
 

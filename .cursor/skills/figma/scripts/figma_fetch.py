@@ -15,8 +15,10 @@ Subcommands:
     variables     Fetch local variables (booleans, strings, modes)
     comments      Fetch file comments
     full          Run all of the above combined
+    download      Download the full Figma board (raw API response) and save locally
 
-Requires FIGMA_TOKEN environment variable to be set to a Personal Access Token.
+Requires FIGMA_TOKEN (environment variable or in a .env file in the skill directory).
+Pass a full Figma URL as --file-key; node-id from the URL is used automatically when present.
 """
 
 import argparse
@@ -57,6 +59,17 @@ APPEARANCE_KEYS = frozenset({
 })
 
 
+def write_output(data, output_path):
+    """Write JSON to stdout or to a file if output_path is given."""
+    text = json.dumps(data, indent=2)
+    if output_path:
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(text)
+        print(f"Saved to {output_path}", file=sys.stderr)
+    else:
+        print(text)
+
+
 def extract_file_key(key_or_url):
     """Extract file key from a Figma URL or return as-is if already a key."""
     # Match Figma URLs: /design/KEY/... or /file/KEY/...
@@ -65,6 +78,37 @@ def extract_file_key(key_or_url):
         return match.group(1)
     # If no URL pattern matched, treat as raw key
     return key_or_url.strip()
+
+
+def extract_node_id_from_url(url):
+    """Extract node-id from a Figma URL (e.g. node-id=8062-9900) and return API format (8062:9900)."""
+    match = re.search(r'node-id=([0-9]+)-([0-9]+)', url)
+    if match:
+        return f"{match.group(1)}:{match.group(2)}"
+    return None
+
+
+def load_env_from_dirs(dirs):
+    """Load KEY=value from .env in the given directories; set os.environ for FIGMA_* keys."""
+    for dir_path in dirs:
+        env_path = os.path.join(dir_path, ".env")
+        if not os.path.isfile(env_path):
+            continue
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    if "=" in line and line.split("=", 1)[0].strip().startswith("FIGMA_"):
+                        key, _, value = line.partition("=")
+                        key = key.strip()
+                        value = value.strip().strip('"').strip("'")
+                        if key:
+                            os.environ.setdefault(key, value)
+        except OSError:
+            pass
+        break  # load only from first .env found
 
 
 def build_opener():
@@ -235,7 +279,7 @@ def cmd_structure(args, token, opener=None):
         "version": data.get("version"),
         "document": cleaned,
     }
-    print(json.dumps(result, indent=2))
+    write_output(result, getattr(args, "output", None))
 
 
 def cmd_interactions(args, token, opener=None):
@@ -259,7 +303,7 @@ def cmd_interactions(args, token, opener=None):
         "interactions": interactions,
         "flowStartingPoints": flows,
     }
-    print(json.dumps(result, indent=2))
+    write_output(result, getattr(args, "output", None))
 
 
 def cmd_components(args, token, opener=None):
@@ -318,7 +362,7 @@ def cmd_components(args, token, opener=None):
     if node_properties:
         result["nodeProperties"] = node_properties
 
-    print(json.dumps(result, indent=2))
+    write_output(result, getattr(args, "output", None))
 
 
 def cmd_variables(args, token, opener=None):
@@ -353,7 +397,7 @@ def cmd_variables(args, token, opener=None):
         "variables": variables,
         "variableCollections": collections,
     }
-    print(json.dumps(result, indent=2))
+    write_output(result, getattr(args, "output", None))
 
 
 def cmd_comments(args, token, opener=None):
@@ -377,7 +421,7 @@ def cmd_comments(args, token, opener=None):
     result = {
         "comments": comments,
     }
-    print(json.dumps(result, indent=2))
+    write_output(result, getattr(args, "output", None))
 
 
 def cmd_full(args, token, opener=None):
@@ -483,7 +527,32 @@ def cmd_full(args, token, opener=None):
         "variableCollections": collections_result,
         "comments": comments,
     }
-    print(json.dumps(result, indent=2))
+    write_output(result, getattr(args, "output", None))
+
+
+def cmd_download(args, token, opener=None):
+    """Download the full Figma board (raw API response) and save to a local file.
+
+    Fetches the complete file from the Figma API without stripping any data.
+    The output is the raw API response including document, components, styles, etc.
+    """
+    file_key = extract_file_key(args.file_key)
+    params = {}
+    if args.node_ids:
+        params["ids"] = args.node_ids
+    if getattr(args, "depth", None) is not None:
+        params["depth"] = args.depth
+
+    data = api_request(f"/files/{file_key}", token, params or None, opener=opener)
+
+    output_path = args.output or _default_download_path(data.get("name", "figma"), file_key)
+    write_output(data, output_path)
+
+
+def _default_download_path(file_name, file_key):
+    """Generate a default output path for download: sanitized name + file key + .json."""
+    safe_name = re.sub(r"[^\w\-_. ]", "_", (file_name or "figma").strip())[:50]
+    return f"{safe_name}_{file_key}.json"
 
 
 def main():
@@ -499,8 +568,8 @@ Examples:
   %(prog)s components --file-key ABC123xyz --node-ids "1:2,3:4"
   %(prog)s structure --file-key ABC123xyz --password SECRET
 
-Environment:
-  FIGMA_TOKEN      Figma Personal Access Token (required)
+Environment / .env:
+  FIGMA_TOKEN      Figma Personal Access Token (required; from env or .env in skill dir)
   FIGMA_PASSWORD   Password for password-protected files (optional)
 """,
     )
@@ -509,7 +578,7 @@ Environment:
     subparsers.required = True
 
     # Common arguments
-    def add_common_args(sub):
+    def add_common_args(sub, include_output=True):
         sub.add_argument(
             "--file-key", required=True,
             help="Figma file key or full Figma URL",
@@ -522,6 +591,11 @@ Environment:
             "--password",
             help="Password for password-protected files (or set FIGMA_PASSWORD env var)",
         )
+        if include_output:
+            sub.add_argument(
+                "-o", "--output",
+                help="Write output to this file instead of stdout",
+            )
 
     # structure
     p_structure = subparsers.add_parser(
@@ -573,12 +647,35 @@ Environment:
         help="Depth for structure traversal (default: 3)",
     )
 
+    # download
+    p_download = subparsers.add_parser(
+        "download",
+        help="Download the full Figma board (raw API response) and save locally",
+    )
+    add_common_args(p_download)
+    p_download.add_argument(
+        "--depth", type=int,
+        help="Optional depth limit for the document tree (default: full tree)",
+    )
+
     args = parser.parse_args()
 
-    # Get token
+    # Load .env from skill directory (parent of scripts/) or script directory if not set
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    skill_dir = os.path.dirname(script_dir)
+    load_env_from_dirs([skill_dir, script_dir, os.getcwd()])
+
+    # Optionally set node_ids from URL (e.g. ...?node-id=8062-9900)
+    if args.file_key and "figma.com" in args.file_key and not getattr(args, "node_ids", None):
+        node_id = extract_node_id_from_url(args.file_key)
+        if node_id:
+            args.node_ids = node_id
+
+    # Get token (from env or .env)
     token = os.environ.get("FIGMA_TOKEN")
     if not token:
-        print("Error: FIGMA_TOKEN environment variable is not set.", file=sys.stderr)
+        print("Error: FIGMA_TOKEN is not set. Set FIGMA_TOKEN in the environment or in a .env file.", file=sys.stderr)
+        print("Place .env in the figma skill directory with: FIGMA_TOKEN=figd_...", file=sys.stderr)
         print("Get a Personal Access Token from Figma > Settings > Personal access tokens", file=sys.stderr)
         sys.exit(1)
 
@@ -598,6 +695,7 @@ Environment:
         "variables": cmd_variables,
         "comments": cmd_comments,
         "full": cmd_full,
+        "download": cmd_download,
     }
     commands[args.command](args, token, opener=opener)
 
