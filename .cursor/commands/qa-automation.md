@@ -5,7 +5,10 @@ Follow rules in:
 .cursor/rules/automation-framework-rules.mdc
 
 TASK:
-Generate Automation tests inside /automation folder.
+Generate a complete automation framework and tests inside the /automation folder.
 
-INPUT:
+SELECTED TOOL:
+{{tool}}
+
+NORMALIZED TESTS:
 {{input}}
