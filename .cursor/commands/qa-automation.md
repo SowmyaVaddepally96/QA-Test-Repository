@@ -5,7 +5,7 @@ Follow rules in:
 .cursor/rules/automation-framework-rules.mdc
 
 TASK:
-Generate Playwright tests inside /automation folder.
+Generate Automation tests inside /automation folder.
 
 INPUT:
 {{input}}
