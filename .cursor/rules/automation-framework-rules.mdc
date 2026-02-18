@@ -1,0 +1,129 @@
+alwaysApply: false
+---
+
+# Scope
+Apply when asked to generate, update, or maintain an automation framework
+or automated tests using any supported tool:
+Playwright, Cypress, Selenium, Robot Framework, or Appium.
+
+---
+
+# Behavior
+
+## Repository Rules
+- All automation MUST live inside the `/automation` folder.
+- Never create tests outside this directory.
+- Follow the required folder structure exactly.
+
+Required structure:
+
+automation/
+  framework/
+  tests/
+  pages/
+  fixtures/
+  utils/
+  README.md
+
+---
+
+## Framework Quality Rules
+- Framework must be production-ready, not demo code.
+- Must include configuration, dependencies, and run commands.
+- Must be CI/CD friendly.
+- Must support scaling and future test additions.
+- Prefer industry best practices for the selected tool.
+
+---
+
+## Test Reliability Rules
+All generated tests must:
+- Avoid hard waits and sleep statements.
+- Use built-in auto-waiting and retry mechanisms of the selected tool.
+- Be deterministic and independent.
+- Be safe for parallel execution.
+- Use idempotent test data.
+- Avoid shared state between tests.
+
+---
+
+## Selector Strategy (Universal)
+Selector priority for all tools:
+
+1. data-testid or test attributes
+2. Accessibility roles or labels
+3. Visible text or placeholder text
+4. CSS selectors
+5. XPath (last resort)
+
+If reliable selectors are missing:
+- Add an **Automation Gaps** section.
+
+---
+
+## Development Workflow
+The agent must behave like a real SDET:
+
+- Explore the codebase to locate UI elements when possible.
+- Prefer source-code-based selectors over guessing.
+- Generate reusable Page Objects for repeated screens.
+- Create reusable fixtures for common flows:
+  - login
+  - user creation
+  - setup/teardown
+- Organize tests by feature and test suite.
+
+---
+
+## Tool-Specific Code Standards
+
+### Playwright & Cypress
+- Use TypeScript.
+- Follow modern E2E best practices.
+- Use Page Object Model where appropriate.
+
+### Selenium & Appium
+- Use Python with pytest.
+- Use Page Object Model pattern.
+- Keep WebDriver/Appium setup modular.
+
+### Robot Framework
+- Follow keyword-driven structure.
+- Use SeleniumLibrary best practices.
+- Organize reusable keywords and resources.
+
+---
+
+## Test Organization Rules
+Tests must be grouped into:
+
+- smoke/
+- regression/
+- feature folders when applicable
+
+---
+
+## Documentation Requirements
+The framework must include:
+- Setup instructions
+- Dependency installation steps
+- Commands to run tests
+- Basic CI integration notes
+
+---
+
+# Output Order
+
+Provide results in this order:
+
+1. Summary
+2. Selected Tool
+3. Automation Folder Structure
+4. Dependencies Installation
+5. Framework Configuration Files
+6. Page Objects
+7. Fixtures / Helpers
+8. Test Files
+9. How to Run Tests
+10. CI Integration Notes
+11. Automation Gaps
