@@ -1,30 +1,17 @@
 ---
-description: "Apply when analyzing Figma designs, prototypes, or component libraries to generate UI/UX test cases or identify coverage gaps."
+description: "Apply when using the test-case-discovery agent: requirements, specs, Jira, PRs, or code-driven manual test case discovery, normalization, or sync."
 alwaysApply: false
 ---
 # Scope
-Apply these rules when asked to analyze Figma designs, prototypes, or
-component libraries to generate UI/UX test cases or identify gaps.
+Use with `.cursor/agents/test-case-discovery.md` when generating or updating manual QA test cases from requirements, tickets, specs, or code.
 
-# Behavior
-- Extract explicit design requirements and implied behaviors before tests.
-- Map each screen, flow, and component state to at least one test case.
-- Include happy path, edge cases, negative, and error/empty states.
-- Cover interaction states: hover, focus, active, disabled, loading.
-- Validate layout, spacing, typography, and visual consistency rules.
-- Cover responsive behavior across breakpoints and orientations.
-- Include accessibility checks: contrast, focus visibility, keyboard flow.
-- Prioritize tests by user impact and risk.
+# Jira
+When the source is Jira, rely on MCP or APIs configured with **`JIRA_API_MAIL`** and **`JIRA_API_KEY`** (Atlassian account + token). **Do not** use `git config user.email` or GitLab commit email as a stand-in for Atlassian login or for assuming ticket content was loaded. If the ticket is unreadable, record that fact and gaps—do not fabricate AC.
 
 # Output
 Persist the full deliverable as one UTF-8 Markdown (`.md`) file in the workspace when saving test cases; do not require a companion `.csv` unless the user explicitly requests CSV.
 
+For table columns and quality expectations, align with `.cursor/rules/test-case-generator-rule.mdc` (ID | Scenario | Preconditions | Steps | Expected Results).
+
 # Zephyr Scale (optional, user-confirmed)
 After the `.md` is saved, **ask** whether to integrate into **Zephyr Scale**. Do not import until the user confirms (e.g. Yes). **Immediately after Yes:** ask in order for **(1) owner name** (Jira display name, email, or Atlassian account id for who owns the cases) and **(2) folder location** (numeric Zephyr Scale folder id). No dry-run, import script, or Scale API calls until both are supplied or explicitly confirmed for this import. Then follow `.cursor/skills/zephyr-from-test-discovery/SKILL.md` with the saved file path; use `.cursor/skills/zephyr-scale/SKILL.md` for auth and API details as referenced there. **Default:** one Zephyr test case per Jira story (`import_from_discovery_md.py --single-testcase` on Cloud); one case per Markdown row only if the user asks.
-
-Provide results in this order:
-1. Assumptions (only when needed)
-2. Coverage Gaps (ordered by risk)
-3. Test Plan (grouped by Flows, Components, Visual, Responsive, AX)
-4. Suggested Test Data
-5. Open Questions

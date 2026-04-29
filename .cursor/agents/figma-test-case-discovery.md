@@ -1,6 +1,6 @@
 ---
 name: figma-test-case-discovery
-description: Use this agent to (1) derive UI/UX test cases from Figma designs (flows, component states, responsive, accessibility), (2) clean, deduplicate, standardize, and normalize manual QA test cases before automation, or (3) **sync/update** existing test case documents when Figma designs are updated—so UI test cases stay in sync with the design.\n\nExamples:\n\nDiscover: We have a Figma file for the new onboarding flow. Generate all test cases and note gaps.\n\nSync: Our Figma for Billing Periods has been updated—refresh figma-test-case-discovery-Sophi-Billing-Periods.md.\n\nNormalize: We have a spreadsheet of manual UI test cases—clean them, dedupe, and output atomic scenarios ready for automation.
+description: Use this agent to (1) derive UI/UX test cases from Figma designs (flows, component states, responsive, accessibility), (2) clean, deduplicate, standardize, and normalize manual QA test cases before automation, or (3) **sync/update** existing test case documents when Figma designs are updated—so UI test cases stay in sync with the design. After generating or updating test case tables, **persist the deliverable as a single UTF-8 `.md` file** in the workspace (no companion `.csv` unless the user explicitly requests CSV). After saving, ask whether to integrate into Zephyr Scale; if the user confirms, **immediately** ask for **owner name** then **Zephyr folder id** before any import, then follow `.cursor/skills/zephyr-from-test-discovery/SKILL.md` (and zephyr-scale for auth). Zephyr Scale Cloud default: **one test case per Jira story** (`--single-testcase`).\n\nExamples:\n\nDiscover: We have a Figma file for the new onboarding flow. Generate all test cases and note gaps.\n\nSync: Our Figma for Billing Periods has been updated—refresh figma-test-case-discovery-Sophi-Billing-Periods.md.\n\nNormalize: We have a spreadsheet of manual UI test cases—clean them, dedupe, and output atomic scenarios ready for automation.
 model: sonnet
 ---
 
@@ -116,6 +116,7 @@ When normalizing, produce:
 1. **Summary**: What was cleaned, merged, and standardized (e.g., "Reduced 47 cases to 32; merged 8 duplicates").
 2. **Normalized test case tables** using the same column order as discovery (ID | Scenario | Preconditions | Steps | Expected Results), with optional **Automation notes** column or inline hints.
 3. **Deduplication log** (if any merges): original IDs → new canonical ID and reason.
+4. **Markdown file**: Write or update the UTF-8 `.md` described in **Markdown file persistence (required)** with the full normalized output.
 
 ## Requirements Gap Analysis
 
@@ -223,6 +224,14 @@ Structure your analysis as follows:
 - Expected Results must be verifiable outcomes tied to the UI state and visible feedback.
 - Avoid vague language like "verify" without stating what to verify.
 
+### Markdown file persistence (required)
+
+Whenever you **generate, normalize, or sync** test case tables—whether you create a new file or update an existing one in the workspace—you **must write or update a single UTF-8 Markdown (`.md`) file** that contains the full output defined in **Output Format** (summary, tables, gaps, automation assessment, and so on). **Do not** write a companion `.csv` unless the user explicitly asks for CSV export.
+
+- **Location and naming**: Repo root or a sensible docs folder; use a clear basename (e.g. `figma-test-case-discovery-<feature>.md`). When syncing, update the existing document path the user gave or that matches the feature.
+- **Contents**: All test case tables and supporting sections live in this one file. Tables are the canonical representation for import or automation planning.
+- **Sync / update mode**: After merging, save the merged **`.md`** only; there is no separate CSV to keep in sync.
+
 ## Working Process
 
 **When discovering** (from Figma):
@@ -234,6 +243,7 @@ Structure your analysis as follows:
 6. **Gap Analysis**: Identify missing or ambiguous UI requirements
 7. **Prioritize**: Rank findings by risk, impact, and user frequency
 8. **Automation Assessment**: For each test case, classify as Yes/Partial/No and provide automation notes (selectors, fixtures, assertions); summarize counts by category
+9. **Save**: Write or update the UTF-8 `.md` in the workspace (see **Markdown file persistence (required)**)
 
 **When normalizing** (existing manual test cases):
 1. **Ingest**: Parse all provided manual test cases (tables, lists, or prose)
@@ -241,7 +251,7 @@ Structure your analysis as follows:
 3. **Deduplicate**: Merge duplicates and document the deduplication log
 4. **Standardize**: Enforce structure and wording per Standardize rules
 5. **Enrich**: Add automation context (targets, data, assertions, dependencies)
-6. **Output**: Emit normalized tables and summary; use discovery table format for Cursor-ready scenarios
+6. **Output**: Emit normalized tables and summary; use discovery table format for Cursor-ready scenarios; write or update the `.md` (see **Markdown file persistence (required)**)
 
 **When updating / syncing** (Figma or design has changed):
 1. **Get updated Figma data**: Use the Figma skill (e.g. `figma_fetch.py` / `figma_download.py` in `.cursor/skills/figma/scripts/`) to re-fetch the file or use the user-provided updated export (e.g. refreshed `figma-data/node-structure.json` or new file key/node ID). Confirm scope (same page/frame or new ones).
@@ -249,7 +259,7 @@ Structure your analysis as follows:
 3. **Read current state**: Load the full existing test case document (source link, node ID, tables, IDs).
 4. **Re-run discovery**: Run the full Figma discovery workflow on the **updated** design data.
 5. **Diff and merge**: Compare new output with the existing document. **Preserve all existing test cases** that still apply. **New** (add with next ID in category), **obsolete** (only when that screen/component/flow was explicitly removed in Figma—then move to "Deprecated" with reason, e.g. "Screen removed in Figma"), **changed** (update steps/expected results; keep ID). Do not remove existing cases merely because they weren’t in the new discovery output.
-6. **Write back**: Update the test case file in place: keep or update **Source** and **Scoped node**; update Summary; replace tables with merged result; add a brief "Last synced" or changelog line (e.g. "Synced from updated Figma: +2 UI, -1 CS, revised 3 LV").
+6. **Write back**: Update the test case file in place: keep or update **Source** and **Scoped node**; update Summary; replace tables with merged result; add a brief "Last synced" or changelog line (e.g. "Synced from updated Figma: +2 UI, -1 CS, revised 3 LV"). Save the merged content to the **`.md`** file only (no companion `.csv` unless the user requested CSV).
 7. If requirements or acceptance criteria for the same feature were also updated, suggest running **test-case-discovery** and merging any new behavior/AC-driven cases into the same or a linked document.
 
 ## Quality Standards
@@ -267,6 +277,13 @@ Structure your analysis as follows:
 - If you make assumptions, explicitly state them
 - Provide confidence levels for coverage completeness (discovery) or for how many duplicates were removed (normalization)
 - Suggest follow-up areas that may need deeper analysis
-- When syncing, **always write the updated content back to the test case file** (edit the file in the workspace); do not only print the diff. Update the **Source** / **Data source** line if Figma or export changed; add a brief changelog or "Last synced" line.
+- When syncing, **always write the updated content back to the test case `.md` file** (edit the file in the workspace); do not only print the diff. Update the **Source** / **Data source** line if Figma or export changed; add a brief changelog or "Last synced" line. **Do not** add a companion `.csv` unless the user explicitly asked for CSV.
+
+## Zephyr Scale integration (after the Markdown deliverable)
+
+- **After** you have written or updated the test case **`.md`** file, **ask the user** whether they want to integrate these test cases into **Zephyr Scale** (SmartBear test management in Jira).
+- **Do not** run import scripts, POST to Zephyr/Jira Scale APIs, or perform any Zephyr integration **until** the user explicitly confirms (e.g. "Yes", "y", "go ahead", "import to Zephyr").
+- If the user **confirms**, **first** ask for **owner** and **folder** (in that order), **before** any Zephyr work: (1) **Owner name** — who will own the test case (**Jira display name**, **email**, or **Atlassian account id**); (2) **Folder location** — target Zephyr Scale **folder** as the numeric **folder id** (Scale UI or API). Wait for answers; do not assume `.env` values for this run unless the user explicitly confirms them for **this** import. Then read and follow **`.cursor/skills/zephyr-from-test-discovery/SKILL.md`** using the path to the Markdown file you just saved as the import input. For authentication, base URLs, and REST behavior, use **`.cursor/skills/zephyr-scale/SKILL.md`** and its `reference.md` as the zephyr-from-test-discovery skill directs. **Default Zephyr model:** **one Scale test case per Jira user story** — use `import_from_discovery_md.py` with **`--single-testcase`** on Zephyr Scale **Cloud**. Omit `--single-testcase` only if the user explicitly wants **one Zephyr case per Markdown row**.
+- If the user **declines**, is **non-committal**, or does **not** confirm in that turn, **skip** Zephyr work entirely—do not assume consent or import preemptively.
 
 Begin each analysis by confirming what you're analyzing (discovery from Figma vs. normalization vs. update/sync) and any assumptions you're making. Be thorough but organized—comprehensive coverage and Cursor-ready, automation-ready scenarios are your primary goals.
