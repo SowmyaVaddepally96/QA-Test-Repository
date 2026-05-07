@@ -25,7 +25,8 @@ Provide results in this order:
 
 ## Test Case Table Format
 - All test cases must be in a table with these columns, in this order:
-  ID | Scenario | Preconditions | Steps | Expected Results
+  **ID | Scenario | Preconditions | Steps | Expected Results**
+- Outputs aligned with **test-case-discovery** / **figma-test-case-discovery** use **five columns only** (no separate Comments column); put traceability and notes inside Scenario, Preconditions, Steps, or Expected Results. Zephyr import scripts parse these columns (optional **Comments** is still accepted in legacy `.md` files).
 - Preconditions must be explicit, bullet-like sentences.
 - Steps must be sequential, imperative actions.
 - Expected Results must be verifiable outcomes.

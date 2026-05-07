@@ -9,7 +9,8 @@ component libraries to generate UI/UX test cases or identify gaps.
 # Behavior
 - Extract explicit design requirements and implied behaviors before tests.
 - Map each screen, flow, and component state to at least one test case.
-- Include happy path, edge cases, negative, and error/empty states.
+- Include happy path, edge cases, **negative**, and error/empty states; **outline suite structure** so positive vs. negative coverage is obvious.
+- When login or account UI is in scope, include **invalid credentials** and **error message** placement/copy per design; flag unspecified messaging as a gap.
 - Cover interaction states: hover, focus, active, disabled, loading.
 - Validate layout, spacing, typography, and visual consistency rules.
 - Cover responsive behavior across breakpoints and orientations.
@@ -19,8 +20,10 @@ component libraries to generate UI/UX test cases or identify gaps.
 # Output
 Persist the full deliverable as one UTF-8 Markdown (`.md`) file in the workspace when saving test cases; do not require a companion `.csv` unless the user explicitly requests CSV.
 
+Use tables with **ID | Scenario | Preconditions | Steps | Expected Results** only—no Comments column; put frame/node refs, variants, assumptions, and open questions inside those columns. Aim for **detail and clarity** sufficient for thorough manual testing.
+
 # Zephyr Scale (optional, user-confirmed)
-After the `.md` is saved, **ask** whether to integrate into **Zephyr Scale**. Do not import until the user confirms (e.g. Yes). **Immediately after Yes:** ask in order for **(1) owner name** (Jira display name, email, or Atlassian account id for who owns the cases) and **(2) folder location** (numeric Zephyr Scale folder id). No dry-run, import script, or Scale API calls until both are supplied or explicitly confirmed for this import. Then follow `.cursor/skills/zephyr-from-test-discovery/SKILL.md` with the saved file path; use `.cursor/skills/zephyr-scale/SKILL.md` for auth and API details as referenced there. **Default:** one Zephyr test case per Jira story (`import_from_discovery_md.py --single-testcase` on Cloud); one case per Markdown row only if the user asks.
+After the `.md` is saved, **ask** whether to integrate into **Zephyr Scale**. Do not import until the user confirms (e.g. Yes). **Immediately after Yes:** ask in order for **(1) owner name** (Jira display name, email, or Atlassian account id for who owns the cases) and **(2) folder location** (numeric Zephyr Scale folder id). No dry-run, import script, or Scale API calls until both are supplied or explicitly confirmed for this import. Then follow `.cursor/skills/zephyr-from-test-discovery/SKILL.md` with the saved file path; use `.cursor/skills/zephyr-scale/SKILL.md` for auth and API details as referenced there. **Default:** one Zephyr test case per Acceptance Criterion (`import_from_discovery_md.py --per-ac` on Cloud); `--single-testcase` for one case per whole story; one case per Markdown row only if the user asks.
 
 Provide results in this order:
 1. Assumptions (only when needed)

@@ -15,7 +15,7 @@
 
 Resolve Jira **numeric id** and **Summary** (issue title) from key (Jira Cloud):
 
-- `GET {JIRA_CLOUD_URL}/rest/api/3/issue/{KEY}` with Basic auth `email:api_token` → JSON fields `id` and `fields.summary`. The Summary is used as the Zephyr test case **name** for **`--single-testcase`** imports (when present); otherwise the Markdown metadata table row **Summary** is used, then a fallback name including the story key.
+- `GET {JIRA_CLOUD_URL}/rest/api/3/issue/{KEY}` with Basic auth `email:api_token` → JSON fields `id` and `fields.summary`. The Summary is used as the Zephyr test case **name** for **`--per-ac`** (`{Summary} — AC …`) and **`--single-testcase`** imports (when present); otherwise the Markdown metadata table row **Summary** is used, then a fallback name including the story key.
 
 ## Environment variables
 
@@ -55,7 +55,9 @@ If the file contains `## UI Flow Test Cases`, use **figma** section rules; else 
 
 Re-running the script **creates duplicate** test cases unless you delete them in Zephyr first.
 
-With **`--single-testcase`**, each run still **POSTs a new** test case (Scale has no “upsert by name” in this script). To replace a consolidated case, delete the old one in Zephyr, then re-import.
+With **`--per-ac`** or **`--single-testcase`**, each run still **POSTs new** test case(s) (Scale has no “upsert by name” in this script). To replace imported cases, delete the old ones in Zephyr, then re-import.
+
+**Per-AC grouping:** Rows are bucketed by the first match of `AC …` in optional **Comments** (legacy), **Scenario**, or **Preconditions** text. New discovery output uses five columns only — tag ACs in Scenario or Preconditions.
 
 ## Troubleshooting
 

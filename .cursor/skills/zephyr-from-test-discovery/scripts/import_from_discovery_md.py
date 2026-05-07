@@ -3,20 +3,22 @@
 Parse test-case-discovery / figma-test-case-discovery Markdown and create
 Zephyr Scale test cases (happy path + negative sections only).
 
-Cloud workflow (recommended):
-  - Consolidated (--single-testcase): Zephyr **name** = Jira issue **Summary** (from Jira REST or
-    metadata table **Summary** row); fallback includes story key. Description from ## Summary;
-    Precondition from table + story; status defaults to Approved; folderId and
-    ownerId required for live import; step-by-step script via POST /teststeps;
-    traceability via POST .../links/issues (numeric Jira issue id).
+Cloud workflows:
+  - Per AC (--per-ac, recommended): One Zephyr test case **per Acceptance Criterion**. Group rows using
+    **AC …** tags in Scenario, Preconditions, or optional legacy Comments. Name = `{Jira Summary} — AC …`.
+    Same traceability link on each case.
+  - Consolidated (--single-testcase): One Zephyr **name** = whole story (Jira **Summary**); all rows
+    as steps in one case.
 
 Loads .env like zephyr-scale/scripts/zephyr_request.py (stdlib only).
 
 Usage:
   python import_from_discovery_md.py test-cases-PROJ-123.md [--dry-run] [--strict]
   python import_from_discovery_md.py test.md --jira-key PROJ-123 --owner-id ... --folder-id ...
+  python import_from_discovery_md.py test.md --per-ac --owner-id ... --folder-id ...
+      # one Scale test case per AC (AC tags in Scenario/Preconditions/Comments); Test Script = one step per row in that AC
   python import_from_discovery_md.py test.md --single-testcase --owner-id ... --folder-id ...
-      # one Scale test case; Test Script = one step per HP/NEG row (default is one case per row)
+      # one Scale test case for whole story; Test Script = one step per HP/NEG row
 """
 
 from __future__ import annotations
@@ -299,6 +301,8 @@ def find_test_table_columns(header_cells: list[str]) -> dict[str, int] | None:
             mapping["steps"] = i
         if "expected" in h:
             mapping["expected"] = i
+        if "comment" in h:
+            mapping["comments"] = i
     if "id" in mapping and "scenario" in mapping:
         return mapping
     return None
@@ -426,6 +430,8 @@ def parse_single_table(
             "steps": get("steps"),
             "expected": get("expected"),
         }
+        if "comments" in colmap:
+            row["comments"] = get("comments")
         out.append((inner_policy, row))
 
     # In strict mode, ignore rows where inner_policy came only from category rows inside edge tables
@@ -474,6 +480,51 @@ def truncate(s: str, max_len: int) -> str:
     if len(s) <= max_len:
         return s
     return s[: max_len - 1].rstrip() + "…"
+
+
+_AC_LABEL = re.compile(
+    r"\bAC\s*([\d]+(?:\.[\d]+)?(?:\s*[-–]\s*[\d]+(?:\.[\d]+)?)?)",
+    re.IGNORECASE,
+)
+
+
+def extract_ac_bucket(comments: str, scenario: str, preconditions: str = "") -> str:
+    """
+    Map a discovery row to one Acceptance Criterion bucket for Zephyr (--per-ac).
+    Searches optional **Comments**, then **Scenario**, then **Preconditions**, for AC 1, AC 1.2, AC 1–4.
+    """
+    text = f"{comments or ''} {scenario or ''} {preconditions or ''}"
+    m = _AC_LABEL.search(text)
+    if m:
+        label = m.group(1).strip().replace("–", "-").replace("—", "-")
+        return f"AC {label}"
+    return "_Unmapped"
+
+
+def natural_bucket_sort_key(bucket: str) -> tuple[int | float, ...]:
+    if bucket == "_Unmapped":
+        return (10**9,)
+    nums = [int(x) for x in re.findall(r"\d+", bucket)]
+    return tuple(nums) if nums else (0,)
+
+
+def group_rows_by_ac(
+    rows: list[tuple[Policy, dict[str, str]]],
+) -> list[tuple[str, list[tuple[Policy, dict[str, str]]]]]:
+    """Preserve row order within each AC group; emit groups sorted by AC label."""
+    buckets: dict[str, list[tuple[Policy, dict[str, str]]]] = {}
+    order: list[str] = []
+    for cat, row in rows:
+        comments = (row.get("comments") or "").strip()
+        scenario = (row.get("scenario") or "").strip()
+        pre = (row.get("preconditions") or "").strip()
+        b = extract_ac_bucket(comments, scenario, pre)
+        if b not in buckets:
+            buckets[b] = []
+            order.append(b)
+        buckets[b].append((cat, row))
+    ordered_labels = sorted(order, key=natural_bucket_sort_key)
+    return [(lbl, buckets[lbl]) for lbl in ordered_labels]
 
 
 def merge_custom_fields() -> dict:
@@ -588,11 +639,29 @@ def build_consolidated_payload(
     owner_id: str | None,
     folder_id: str | None,
     story_name: str | None = None,
+    ac_bucket: str | None = None,
 ) -> dict:
-    """Single Zephyr test case representing the whole HP+NEG pack."""
+    """Single Zephyr test case representing the whole HP+NEG pack (or one AC slice when ac_bucket set)."""
     ticket = jira_key or "NOKEY"
     n = len(rows)
-    if story_name and story_name.strip():
+    ab = (ac_bucket or "").strip()
+    if ab and ab != "_Unmapped":
+        if story_name and story_name.strip():
+            name = truncate(f"{story_name.strip()} — {ab}", 250)
+        else:
+            name = truncate(
+                f"{ticket} | {ab} — Happy Path + Negative ({n} scenarios)",
+                250,
+            )
+    elif ab == "_Unmapped":
+        if story_name and story_name.strip():
+            name = truncate(f"{story_name.strip()} — Unmapped (no AC tag in Scenario/Preconditions/Comments)", 250)
+        else:
+            name = truncate(
+                f"{ticket} | Unmapped — Happy Path + Negative ({n} scenarios)",
+                250,
+            )
+    elif story_name and story_name.strip():
         name = truncate(story_name.strip(), 250)
     else:
         name = truncate(
@@ -600,18 +669,37 @@ def build_consolidated_payload(
             250,
         )
     desc = build_description(jira_key, summary_text, component_label)
-    suffix = (
-        "\n\n---\n**Consolidated import:** one Zephyr test case; each **Test Script** step = one discovery row (HP-* / NEG-*)."
-    )
+    if ab and ab != "_Unmapped":
+        suffix = (
+            "\n\n---\n**Per-AC import:** this Zephyr test case covers **"
+            + ab
+            + "** only. Each **Test Script** step = one discovery row (HP-* / NEG-*); AC grouping uses Comments (legacy), Scenario, or Preconditions."
+        )
+    elif ab == "_Unmapped":
+        suffix = (
+            "\n\n---\n**Per-AC import:** rows did not match an `AC …` label in Scenario, Preconditions, or Comments — "
+            "grouped as **Unmapped**. Add AC tags for clearer splits."
+        )
+    else:
+        suffix = (
+            "\n\n---\n**Consolidated import:** one Zephyr test case; each **Test Script** step = one discovery row (HP-* / NEG-*)."
+        )
     if desc:
         desc = (desc + suffix).strip()[:12000]
     else:
         desc = suffix.strip()[:12000]
 
-    objective = (
-        f"For {ticket}, execute all {n} listed scenarios in order. Each step states one discovery case; "
-        "satisfy preconditions (Test data) before executing that step; assert the Expected result."
-    )[:8000]
+    if ab and ab != "_Unmapped":
+        objective = (
+            f"For {ticket}, verify **{ab}**: execute all {n} listed scenarios in order for this acceptance criterion. "
+            "Each step states one discovery case; satisfy preconditions (Test data) before executing that step; "
+            "assert the Expected result."
+        )[:8000]
+    else:
+        objective = (
+            f"For {ticket}, execute all {n} listed scenarios in order. Each step states one discovery case; "
+            "satisfy preconditions (Test data) before executing that step; assert the Expected result."
+        )[:8000]
     precondition = (
         "Environment and credentials support this story. Row-level preconditions appear in **Test data** on each step."
     )[:8000]
@@ -753,6 +841,7 @@ def import_rows_consolidated(
         owner_id=owner_id,
         folder_id=folder_id,
         story_name=story_name,
+        ac_bucket=None,
     )
 
     if dry_run:
@@ -833,6 +922,140 @@ def import_rows_consolidated(
             return 1
     link_note = " (issue link applied)" if issue_numeric_id and not skip_link else ""
     print(f"Created: consolidated manual pack -> {tc_str} ({len(step_items)} steps{link_note})")
+    return 0
+
+
+def import_rows_per_ac(
+    rows: list[tuple[Policy, dict[str, str]]],
+    dry_run: bool,
+    *,
+    markdown_full: str,
+    jira_key: str | None,
+    summary_text: str,
+    owner_id: str | None,
+    folder_id: str | None,
+    issue_numeric_id: str | None,
+    story_name: str | None = None,
+) -> int:
+    """Create one Zephyr Cloud test case per Acceptance Criterion bucket (from Scenario / Preconditions / Comments)."""
+    mode = (os.environ.get("ZEPHYR_DEPLOYMENT") or "").strip().lower()
+    if not mode:
+        mode = "server" if os.environ.get("ZEPHYR_JIRA_BASE_URL") else "cloud"
+    if mode != "cloud":
+        print(
+            "Per-AC import (--per-ac) is only supported for Zephyr Scale Cloud.",
+            file=sys.stderr,
+        )
+        return 2
+
+    project = os.environ.get("ZEPHYR_PROJECT_KEY")
+    if not project:
+        print("Missing ZEPHYR_PROJECT_KEY", file=sys.stderr)
+        return 2
+
+    groups = group_rows_by_ac(rows)
+    if len(groups) == 1 and groups[0][0] == "_Unmapped" and len(rows) > 1:
+        print(
+            "Warning: --per-ac did not find AC labels (e.g. AC 1, AC 1.2) in Scenario, Preconditions, or Comments; "
+            "all rows are in one **Unmapped** case. Add **AC …** to Scenario or Preconditions for a per-AC split.",
+            file=sys.stderr,
+        )
+
+    component_label = infer_component_label(markdown_full)
+    cloud_base = os.environ.get("ZEPHYR_CLOUD_BASE_URL", "https://api.zephyrscale.smartbear.com/v2").rstrip("/")
+    url_base = f"{cloud_base}/testcases"
+
+    if dry_run:
+        plans: list[dict[str, Any]] = []
+        for ac_bucket, grp in groups:
+            step_items = build_consolidated_step_items(grp)
+            payload = build_consolidated_payload(
+                project,
+                grp,
+                jira_key=jira_key,
+                summary_text=summary_text,
+                component_label=component_label,
+                owner_id=owner_id,
+                folder_id=folder_id,
+                story_name=story_name,
+                ac_bucket=ac_bucket,
+            )
+            entry: dict[str, Any] = {
+                "ac_bucket": ac_bucket,
+                "step_count": len(step_items),
+                "create_testcase": {"url": url_base, "payload": payload},
+            }
+            if issue_numeric_id:
+                entry["traceability_issue"] = {"issueId": issue_numeric_id}
+            plans.append(entry)
+        print(json.dumps({"mode": "per-ac", "cases": plans}, ensure_ascii=False, indent=2)[:48000])
+        print(f"Dry-run: {len(groups)} test case(s) (one per AC bucket).")
+        return 0
+
+    token, pre_rc = ensure_cloud_bearer_ready(project)
+    if pre_rc != 0:
+        return pre_rc
+    if not owner_id or not folder_id:
+        print(
+            "Cloud import requires Zephyr owner and folder.\n"
+            "  Set ZEPHYR_OWNER_ID and ZEPHYR_FOLDER_ID or pass --owner-id and --folder-id.",
+            file=sys.stderr,
+        )
+        return 2
+    headers = {"Authorization": f"Bearer {token}"}
+    skip_link = os.environ.get("ZEPHYR_SKIP_ISSUE_LINK", "").strip() in ("1", "true", "yes")
+    if not issue_numeric_id and not skip_link:
+        print(
+            "Traceability requires Jira numeric issue id.\n"
+            "  Set ZEPHYR_JIRA_ISSUE_ID, or JIRA_CLOUD_URL + JIRA_API_MAIL + JIRA_API_KEY,\n"
+            "  or ZEPHYR_SKIP_ISSUE_LINK=1.",
+            file=sys.stderr,
+        )
+        return 2
+
+    created_keys: list[str] = []
+    for ac_bucket, grp in groups:
+        step_items = build_consolidated_step_items(grp)
+        payload = build_consolidated_payload(
+            project,
+            grp,
+            jira_key=jira_key,
+            summary_text=summary_text,
+            component_label=component_label,
+            owner_id=owner_id,
+            folder_id=folder_id,
+            story_name=story_name,
+            ac_bucket=ac_bucket,
+        )
+        status, body = http_post_json(url_base, headers, payload)
+        if status not in (200, 201):
+            print(f"HTTP {status} per-AC create ({ac_bucket}): {body[:2000]}", file=sys.stderr)
+            return 1
+        try:
+            data = json.loads(body)
+            tc_key = data.get("key") or data.get("id")
+        except json.JSONDecodeError:
+            print(f"Create returned non-JSON for {ac_bucket}: {body[:500]}", file=sys.stderr)
+            return 1
+        tc_str = str(tc_key) if tc_key is not None else ""
+        if not tc_str:
+            print(f"Create response missing test case key for {ac_bucket}.", file=sys.stderr)
+            return 1
+
+        st2, body2 = post_teststeps_cloud(cloud_base, headers, tc_str, step_items)
+        if st2 not in (200, 201):
+            print(f"Test steps HTTP {st2} for {tc_key} ({ac_bucket}): {body2[:2000]}", file=sys.stderr)
+            return 1
+        if issue_numeric_id and not skip_link:
+            st3, body3 = post_issue_link_cloud(cloud_base, headers, tc_str, str(issue_numeric_id))
+            if st3 not in (200, 201):
+                print(f"Issue link HTTP {st3} for {tc_key}: {body3[:2000]}", file=sys.stderr)
+                return 1
+        created_keys.append(tc_str)
+        link_note = " (issue link applied)" if issue_numeric_id and not skip_link else ""
+        print(f"Created: {ac_bucket} -> {tc_str} ({len(step_items)} steps{link_note})")
+
+    print(f"Done. {len(created_keys)} test case(s) (per Acceptance Criterion).")
     return 0
 
 
@@ -996,10 +1219,16 @@ def main() -> int:
     p.add_argument("--owner-id", default=None, help="Zephyr owner: Atlassian account id (or ZEPHYR_OWNER_ID)")
     p.add_argument("--folder-id", default=None, help="Zephyr folder numeric id (or ZEPHYR_FOLDER_ID)")
     p.add_argument("--jira-issue-id", default=None, help="Numeric Jira issue id for traceability (or ZEPHYR_JIRA_ISSUE_ID)")
-    p.add_argument(
+    mode_grp = p.add_mutually_exclusive_group()
+    mode_grp.add_argument(
+        "--per-ac",
+        action="store_true",
+        help="Cloud only (recommended): one Zephyr test case per Acceptance Criterion — rows grouped by AC in Scenario / Preconditions / Comments (AC 1, AC 1.2, …)",
+    )
+    mode_grp.add_argument(
         "--single-testcase",
         action="store_true",
-        help="Cloud only: create one Zephyr test case; each HP/NEG row becomes one Test Script step (default: one case per row)",
+        help="Cloud only: one Zephyr test case for the whole story; each HP/NEG row becomes one Test Script step",
     )
     args = p.parse_args()
 
@@ -1039,11 +1268,17 @@ def main() -> int:
 
     print(
         f"Parsed {len(unique)} row(s); format={fmt}; dry_run={args.dry_run}; "
-        f"single_testcase={args.single_testcase}"
+        f"per_ac={args.per_ac}; single_testcase={args.single_testcase}"
     )
     print("--- Preflight (align with story before creating in Zephyr) ---")
     print(f"  Jira story key: {jira_key or '(not set — add --jira-key or rename file test-cases-KEY.md)'}")
-    if args.single_testcase:
+    if args.per_ac:
+        grp_preview = group_rows_by_ac(unique)
+        labels = ", ".join(g[0] for g in grp_preview)
+        print(f"  Per-AC mode: {len(grp_preview)} Zephyr case(s) — buckets: {labels}")
+        zbase = story_name or f"{jira_key or 'NOKEY'} | Manual pack (fallback)"
+        print(f"  Name pattern: `{zbase} — AC …` (from Jira Summary + AC label)")
+    elif args.single_testcase:
         zname = story_name or f"{jira_key or 'NOKEY'} | Manual pack — Happy Path + Negative (fallback)"
         print(f"  Consolidated Zephyr test case name (Jira Summary / metadata): {zname}")
     print(f"  Description source: ## Summary section ({len(summary_text)} chars)")
@@ -1057,6 +1292,18 @@ def main() -> int:
 
     if args.single_testcase:
         return import_rows_consolidated(
+            unique,
+            dry_run=args.dry_run,
+            markdown_full=text,
+            jira_key=jira_key,
+            summary_text=summary_text,
+            owner_id=owner_id,
+            folder_id=folder_id,
+            issue_numeric_id=issue_numeric_id,
+            story_name=story_name,
+        )
+    if args.per_ac:
+        return import_rows_per_ac(
             unique,
             dry_run=args.dry_run,
             markdown_full=text,
