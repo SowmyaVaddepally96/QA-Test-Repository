@@ -115,3 +115,4 @@ Uses `ZEPHYR_DEPLOYMENT` and the variables above to send a minimal authenticated
 
 - Links, paths, and “Scale vs Squad” notes: [reference.md](reference.md)
 - Import **test-case-discovery** / **figma-test-case-discovery** Markdown into Scale (happy path + negative only; **default: one Zephyr test case per Acceptance Criterion** via `--per-ac`): [../zephyr-from-test-discovery/SKILL.md](../zephyr-from-test-discovery/SKILL.md)
+- **Clone Test Cycles folder tree** (subfolders + cycles + assignments; source folder name + new folder name): [../zephyr-clone-test-cycle-folder/SKILL.md](../zephyr-clone-test-cycle-folder/SKILL.md)
